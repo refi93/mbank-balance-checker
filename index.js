@@ -56,7 +56,7 @@ async function run() {
     if (lastKnownBalance && currentBalance !== lastKnownBalance) {
        sendNotification(`mBank balance diff: ${currentBalance - lastKnownBalance} EUR`)
     }
-    console.log(currentBalance)
+
     recordBalance(currentBalance)
     await sleep(5000)
   }
