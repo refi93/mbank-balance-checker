@@ -1,0 +1,26 @@
+{
+  "name": "mbank-balance-checker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/refi93/mbank-balance-checker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/refi93/mbank-balance-checker/issues"
+  },
+  "homepage": "https://github.com/refi93/mbank-balance-checker#readme",
+  "dependencies": {
+    "dotenv": "^6.1.0",
+    "emailjs": "^2.2.0",
+    "fs": "^0.0.1-security",
+    "mbank-api": "^1.0.1",
+    "sleep-promise": "^8.0.1"
+  }
+}
