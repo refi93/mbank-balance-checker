@@ -24,7 +24,7 @@ async function sendNotification(text) {
 }
 
 function lock() {
-  fs.writeFile("/tmp/lock_balance_checker", 'aaaa', function (err) {
+  fs.writeFileSync("/tmp/lock_balance_checker", 'aaaa', function (err) {
     if (err) {
       return console.log(err);
     }
@@ -38,7 +38,7 @@ function checkLock() {
 }
 
 function recordBalance(balance) {
-  fs.writeFile("/tmp/lastbalance", balance, function (err) {
+  fs.writeFileSync("/tmp/lastbalance", balance, function (err) {
     if (err) {
       return console.log(err);
     }
@@ -55,6 +55,7 @@ function getLastKnownBalance() {
 
 async function run() {
   while (true) {
+    checkLock()
     const lastKnownBalance = getLastKnownBalance()
 
     const mbankSession = new Mbank(
@@ -63,12 +64,14 @@ async function run() {
       process.env.PASSWORD,
     )
 
-    checkLock()
     try {
-      await mbankSession.login()
+      const loginSuccess = await mbankSession.login()
+      if (!loginSuccess) {
+        throw new Error('login failed')
+      }
     } catch (e) {
       lock()
-      throw Error(`login failed: ${e}, locking app`)
+      throw new Error(`login failed: ${e}, locking app`)
     }
     const account = await mbankSession.getAccountByIban(process.env.MBANK_IBAN)
 
