@@ -12,7 +12,7 @@ async function sendNotification(text) {
     port: process.env.SMTP_PORT,
     ssl: false,
     user: process.env.SMTP_USER,
-    password: process.env.SMTP_PASSWORD, 
+    password: process.env.SMTP_PASSWORD,
   })
 
   await mailServer.send({
@@ -20,7 +20,21 @@ async function sendNotification(text) {
     to: process.env.EMAIL_TO,
     subject: text,
     text,
-  })  
+  })
+}
+
+function lock() {
+  fs.writeFile("/tmp/lock_balance_checker", 'aaaa', function (err) {
+    if (err) {
+      return console.log(err);
+    }
+  });
+}
+
+function checkLock() {
+  if (fs.existsSync('/tmp/lock_balance_checker')) {
+    throw Error('app is locked')
+  }
 }
 
 function recordBalance(balance) {
@@ -41,20 +55,27 @@ function getLastKnownBalance() {
 
 async function run() {
   while (true) {
-    const lastKnownBalance = getLastKnownBalance()    
+    const lastKnownBalance = getLastKnownBalance()
 
     const mbankSession = new Mbank(
       process.env.COUNTRY,
       process.env.USERNAME,
       process.env.PASSWORD,
     )
-    await mbankSession.login()
+
+    checkLock()
+    try {
+      await mbankSession.login()
+    } catch (e) {
+      lock()
+      throw Error(`login failed: ${e}, locking app`)
+    }
     const account = await mbankSession.getAccountByIban(process.env.MBANK_IBAN)
-    
+
     const currentBalance = parseFloat(account.mAvailableBalance)
-    
+
     if (lastKnownBalance && currentBalance !== lastKnownBalance) {
-       sendNotification(`mBank balance diff: ${currentBalance - lastKnownBalance} EUR`)
+      sendNotification(`mBank diff ${currentBalance - lastKnownBalance}; now ${currentBalance}`)
     }
 
     recordBalance(currentBalance)
