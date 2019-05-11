@@ -24,7 +24,7 @@ async function sendNotification(text) {
 }
 
 function lock() {
-  fs.writeFileSync("/tmp/lock_balance_checker", 'aaaa', function (err) {
+  fs.writeFileSync("/tmp/lock_balance_checker", JSON.stringify(new Date()), function (err) {
     if (err) {
       return console.log(err);
     }
@@ -33,7 +33,8 @@ function lock() {
 
 function checkLock() {
   if (fs.existsSync('/tmp/lock_balance_checker')) {
-    throw Error('app is locked')
+    console.error('app is locked')
+    process.exit(1)
   }
 }
 
@@ -54,6 +55,7 @@ function getLastKnownBalance() {
 }
 
 async function run() {
+  console.log('balance checker started!')
   while (true) {
     checkLock()
     const lastKnownBalance = getLastKnownBalance()
@@ -65,24 +67,26 @@ async function run() {
     )
 
     try {
-      const loginSuccess = await mbankSession.login()
-      if (!loginSuccess) {
-        throw new Error('login failed')
-      }
+      await mbankSession.login()
     } catch (e) {
-      lock()
-      throw new Error(`login failed: ${e}, locking app`)
+      await sleep(600000)
+      // if auth failed lock app so the internet banking account does not lock
+      //if (e.responseData && e.responseData.successful === false) {
+        //lock()
+      //}
+      //throw new Error(`login failed: ${JSON.stringify(e)}`)
     }
     const account = await mbankSession.getAccountByIban(process.env.MBANK_IBAN)
 
     const currentBalance = parseFloat(account.mAvailableBalance)
 
     if (lastKnownBalance && currentBalance !== lastKnownBalance) {
-      sendNotification(`mBank diff ${currentBalance - lastKnownBalance}; now ${currentBalance}`)
+      console.log(`mBank diff ${(currentBalance - lastKnownBalance).toFixed(2)}; now ${currentBalance.toFixed(2)}`)
+      sendNotification(`mBank diff ${(currentBalance - lastKnownBalance).toFixed(2)}; now ${currentBalance.toFixed(2)}`)
     }
 
     recordBalance(currentBalance)
-    await sleep(5000)
+    await sleep(15000)
   }
 }
 
