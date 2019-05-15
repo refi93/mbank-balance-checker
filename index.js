@@ -10,7 +10,7 @@ async function sendNotification(text) {
   const mailServer = mailer.server.connect({
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT,
-    ssl: false,
+    ssl: process.env.SMTP_ENABLE_TLS === 'true',
     user: process.env.SMTP_USER,
     password: process.env.SMTP_PASSWORD,
   })
